@@ -63,14 +63,23 @@ def setname(m):
                         bot.send_message(game['id'], m.from_user.first_name+' теперь имеет прозвище "'+name+'"!')
                     else:
                         bot.send_message(m.chat.id, 'Игра уже идёт! Нельзя менять прозвище!')
+    else:
+        bot.send_message(m.chat.id, 'Используйте формат:\n/setname *имя*', parse_mode='markdown')
             
-            
+        
+@bot.message_handler(commands=['act'])
+def act(m):
+    pass
+        
+        
 def createplayer(user):
     return {
         'id':user.id,
         'gamename':user.first_name,
         'resources':{},
-        'robots':{}
+        'robots':{},
+        'builds':{},
+        'destroyed':{}
     }
                 
       
@@ -82,20 +91,83 @@ def createuser(user):
     }
         
 
-def creategame(id, x=3):  # x - сколько дней будет идти игра
+def creategame(id, x=1, waittime=60):  # x - сколько дней будет идти игра
     return {
         'id':id,
         'players':{},
         'started':False,
         'starttime':None,
-        'duration':x*84600
+        'duration':x*84600,
+        'createtime':time.time(),
+        'time_before_start'=waittime
     }
+
+
+def objectid(game):
+    i=0
+    for ids in game['players']:
+        for idss in game['players'][ids]['robots']:
+            i+=1
+        for idss in game['players'][ids]['builds']:
+            i+=1
+        for idss in game['players'][ids]['destroyed']:
+            i+=1
+    return i
+            
+        
+    
+def c_fabric(code, typee):
+    return {
+        'code':code,
+        'resource':typee,
+        'type':'farmer_building',
+    }
+
+def c_fighter_bot(code, hp=300, gamage=50, shootspeed=3):    # shootspeed - раз в сколько секунд стреляет бот
+    return {
+        'code':code,
+        'type':'fighter_bot',
+        'hp':hp,
+        'damage':damage,
+        'shootspeed':shootspeed
+    }
+
+def c_farm_bot(code, hp=100, farmspeed=10, power=1):    # farmspeed - раз в сколько секунд бот добывает ресурсы
+    return {
+        'code':code,
+        'type':'farmer_bot',
+        'hp':hp,
+        'farmspeed':farmspeed,
+        'power':power                                  # power - влияет на количество ресурсов
+    }
+
+        
+def timecheck():
+    t=threading.Timer(60, timecheck)
+    t.start()
+    ctime=time.time()
+    for ids in games.find({}):
+        if ids['started']==False:
+            if ctime-ids['createtime']>=ids['time_before_start']:
+                games.update_one({'id':ids['id']},{'$set':{'started':True, 'starttime':ctime}})
+                bot.send_message(ids['id'], 'Начинается сражение! Ваша цель - набрать к концу игры как можно больше баллов успеха. Вот таблица, '+
+                                 'показывающая, как начисляются эти баллы к концу игры:\n(Таблица в разработке). Успехов! Чтобы перейти к '+
+                                'управлению своей базой, нажмите /act.')
+                botcode=objectid(ids)
+                for idss in ids['players']:
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_fighter_bot(botcode)}})
+                    botcode+=1
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.builds.'+str(botcode):c_fabric(botcode, 'metal')}})
+                    botcode+=1
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_farm_bot(botcode)}})
+                    botcode+=1
+        else:
+            pass
         
         
 
 
-
-
+timecheck()
 
 print('7777')
 bot.polling(none_stop=True,timeout=600)
