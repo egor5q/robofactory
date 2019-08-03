@@ -14,13 +14,88 @@ bot = telebot.TeleBot(token)
 
 
 client=MongoClient(os.environ['database'])
-db=client.
+db=client.robofactory
 users=db.users
+games=db.games
 
 
 def medit(message_text,chat_id, message_id,reply_markup=None,parse_mode=None):
     return bot.edit_message_text(chat_id=chat_id,message_id=message_id,text=message_text,reply_markup=reply_markup,
                                  parse_mode=parse_mode)   
+
+
+
+@bot.message_handler(commands=['newgame'])
+def newgame(m):
+    game=games.find_one({'id':m.chat.id})
+    if game==None:
+        games.insert_one(creategame(m.chat.id))
+        bot.send_message(m.chat.id, 'Набор участников открыт! Сражение начнётся через 1 час. /joingame для присоединения.')
+    else:
+        if m.text.lower()=='/newgame' or m.text.lower()=='/newgame@robofactorybot':
+            bot.send_message(m.chat.id, 'Игра уже идёт!')
+
+
+@bot.message_handler(commands=['joingame'])
+def joingame(m):
+    game=games.find_one({'id':m.chat.id})
+    if game!=None:
+        if str(m.from_user.id) not in game['players']:
+            try:
+                bot.send_message(m.chat.id, 'А теперь напишите мне ваше прозвище на время битвы (команда /setname).')
+                games.update_one({'id':game['id']},{'$set':{'players.'+str(m.from_user.id):createplayer(m.from_user)}})
+                bot.send_message(m.chat.id, m.from_user.first_name+' вступил(а) в битву! Ожидаем его(её) прозвища (команда /setname). Либо им станет имя игрока.')
+            except:
+                bot.send_message(441399484, traceback.format_exc())
+            
+
+@bot.message_handler(commands=['setname'])
+def setname(m):
+    x=m.text.split(' ')
+    if len(x)>1:
+        name=x[1]
+        if len(name)<=50:
+            game=games.find_one({'id':m.chat.id})
+            if game!=None:
+                if str(m.from_user.id) in game['players']:
+                    if game['started']==False:
+                        games.update_one({'id':m.chat.id},{'$set':{'players.'+str(m.from_user.id)+'.gamename':name}})
+                        bot.send_message(game['id'], m.from_user.first_name+' теперь имеет прозвище "'+name+'"!')
+                    else:
+                        bot.send_message(m.chat.id, 'Игра уже идёт! Нельзя менять прозвище!')
+            
+            
+def createplayer(user):
+    return {
+        'id':user.id,
+        'gamename':user.first_name,
+        'resources':{},
+        'robots':{}
+    }
+                
+      
+def createuser(user):
+    return {
+        'id':user.id,
+        'name':user.first_name,
+        'chat_bonuses':{}
+    }
+        
+
+def creategame(id, x=3):  # x - сколько дней будет идти игра
+    return {
+        'id':id,
+        'players':{},
+        'started':False,
+        'starttime':None,
+        'duration':x*84600
+    }
+        
+        
+
+
+
+
 
 print('7777')
 bot.polling(none_stop=True,timeout=600)
