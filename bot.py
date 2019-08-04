@@ -161,6 +161,8 @@ def timecheck():
                     botcode+=1
                     games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_farm_bot(botcode)}})
                     botcode+=1
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.resources.metal':1000}})
+                    botcode+=1
         else:
             pass
         
