@@ -116,11 +116,14 @@ def objectid(game):
             
         
     
-def c_fabric(code, typee):
+def c_fabric(code, typee, power=1, farmspeed=15):
     return {
         'code':code,
         'resource':typee,
         'type':'farmer_building',
+        'lastfarm':0,
+        'power':power,
+        'farmspeed':farmspeed   #каждые 15 секунд добывает ресурс
     }
 
 def c_fighter_bot(code, hp=300, gamage=50, shootspeed=3):    # shootspeed - раз в сколько секунд стреляет бот
@@ -141,7 +144,33 @@ def c_farm_bot(code, hp=100, farmspeed=10, power=1):    # farmspeed - раз в 
         'power':power                                  # power - влияет на количество ресурсов
     }
 
+def farm(player, id):
+    ctime=time.time()
+    for ids in player['buildings']:
+        build=player['buildings'][ids]
+        if ctime-build['lastfarm']>=build['farmspeed']:
+            metal=0
+            if build['resource']=='metal':
+                metal+=int(build['power']*100)
+            if metal>0:
+                if 'metal' in player['resources']:
+                    x='$inc'
+                else:
+                    x='$set'
+                games.update_one({'id':id},{x:{'players.'+str(player['id'])+'.resources.metal':metal}})
+            games.update_one({'id':id},{'$set':{'players.'+str(player['id'])+'.buildings.'+build['code']+'.lastfarm':ctime}})
+
+
+def farmcheck():
+    t=threading.Timer(5, farmcheck)
+    t.start()
+    ctime=time.time()
+    for ids in games.find({}):
+        for idss in ids['players']:
+            farm(ids['players'][idss], ids['id'])
         
+            
+     
 def timecheck():
     t=threading.Timer(60, timecheck)
     t.start()
