@@ -110,7 +110,7 @@ def creategame(id, x=1, waittime=60):  # x - сколько дней будет 
         'players':{},
         'started':False,
         'starttime':None,
-        'duration':x*84600,
+        'duration':x*86400,
         'createtime':time.time(),
         'time_before_start'=waittime
     }
