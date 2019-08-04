@@ -69,8 +69,21 @@ def setname(m):
         
 @bot.message_handler(commands=['act'])
 def act(m):
-    pass
+    game=games.find_one({'id':m.chat.id})
+    if game!=None:
+        mainmenu(game, m.from_user.id)
+    else:
+        bot.send_message(m.chat.id, 'В этом чате нет запущенной игры.')
         
+
+def mainmenu(game, id):
+    kb=types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton(text='Просмотр строений', callback_data=str(game['id'])+' check_buildings'))
+    try:
+        bot.send_message(id, 'Главное меню.', reply_markup=kb)
+    except:
+        bot.send_message(game['id']' 'Сначала откройте со мной личку, '+game['players'][str(id)]['gamename']+'!')
+
         
 def createplayer(user):
     return {
@@ -199,6 +212,7 @@ def timecheck():
 
 
 timecheck()
+farmcheck()
 
 print('7777')
 bot.polling(none_stop=True,timeout=600)
