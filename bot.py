@@ -74,7 +74,8 @@ def act(m):
         mainmenu(game, m.from_user.id)
     else:
         bot.send_message(m.chat.id, 'В этом чате нет запущенной игры.')
-        
+ 
+
 
 def mainmenu(game, id):
     kb=types.InlineKeyboardMarkup()
@@ -82,8 +83,21 @@ def mainmenu(game, id):
     try:
         bot.send_message(id, 'Главное меню.', reply_markup=kb)
     except:
-        bot.send_message(game['id']' 'Сначала откройте со мной личку, '+game['players'][str(id)]['gamename']+'!')
+        bot.send_message(game['id'], 'Сначала откройте со мной личку, '+game['players'][str(id)]['gamename']+'!')
 
+                         
+@bot.callback_query_handler(func=lambda call: True)
+def call_handler(call):
+    game=games.find_one({'id':call.data.split(' ')[0]})
+    if game!=None:
+        if call.from_user.id in game['players']:
+            player=game['players'][call.from_user.id]
+            if 'check_buildings' in call.data:
+                for ids in player['buildings']:
+                    pass
+        
+                         
+                         
         
 def createplayer(user):
     return {
@@ -175,7 +189,7 @@ def farm(player, id):
 
 
 def farmcheck():
-    t=threading.Timer(5, farmcheck)
+    t=threading.Timer(1, farmcheck)
     t.start()
     ctime=time.time()
     for ids in games.find({}):
@@ -203,7 +217,7 @@ def timecheck():
                     botcode+=1
                     games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_farm_bot(botcode)}})
                     botcode+=1
-                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.resources.metal':1000}})
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.resources.metal':10000}})
                     botcode+=1
         else:
             pass
