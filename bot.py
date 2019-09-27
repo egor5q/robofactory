@@ -90,13 +90,25 @@ def mainmenu(game, id):
 def call_handler(call):
     game=games.find_one({'id':call.data.split(' ')[0]})
     if game!=None:
+        kb=types.InlineKeyboardMarkup()
         if call.from_user.id in game['players']:
             player=game['players'][call.from_user.id]
             if 'check_buildings' in call.data:
                 for ids in player['buildings']:
-                    pass
+                    b=player['buildings'][ids]
+                    kb.add(types.InlineKeyboardButton(text=typetoname(b), callback_data=str(game['id']+' '+'check'+' '+b['code']))
         
-                         
+  
+def typetoname(b):
+    x=''
+    if b['resource']=='iron':
+        x+='🔩'
+
+
+    if b['type']=='farmer_building':
+        x+='Добытчик ресурсов'
+    return x
+                       
                          
         
 def createplayer(user):
@@ -213,11 +225,11 @@ def timecheck():
                 for idss in ids['players']:
                     games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_fighter_bot(botcode)}})
                     botcode+=1
-                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.builds.'+str(botcode):c_fabric(botcode, 'metal')}})
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.builds.'+str(botcode):c_fabric(botcode, 'iron')}})
                     botcode+=1
                     games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.robots.'+str(botcode):c_farm_bot(botcode)}})
                     botcode+=1
-                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.resources.metal':10000}})
+                    games.update_one({'id':ids['id']},{'$set':{'players.'+idss['id']+'.resources.iron':10000}})
                     botcode+=1
         else:
             pass
